@@ -14,6 +14,10 @@ type Query {
     categoriesIds: [ ID! ]
   ): [ Record! ]
   user: User
+    """
+      Year, Month and Day
+    """
+  totalBalance(date: Date): Float
 }
 
 type Mutation {

@@ -76,9 +76,45 @@ function user(parent, args, ctx, info) {
   return ctx.db.query.user({ where : { id: userId }}, info)
 }
 
+function totalBalance(parent, { date }, ctx, info) {
+  const userId = getUserId(ctx);
+  const dateISO = moment(date, 'YYY-MM-DD').endOf('day').toISOString()
+  const pgSchema = `${process.env.PRISMA_SERVICE}$${process.env.PRISMA_STAGE}`
+
+  const mutation = `
+  
+    mutation totalBalance($database: PrismaDatabase, $query: String!){
+      executeRaw(database: $database, query: $query)
+    }
+  `
+
+  const variables = {
+    database: 'default',
+    query: `
+    select SUM("${pgSchema}"."Record".amount) as totalbalance
+      from "${pgSchema}"."Record"
+      
+      INNER JOIN "${pgSchema}"."_RecordToUser"
+      on "${pgSchema}"."_RecordToUser"."A" = "${pgSchema}"."Record"."id"
+        
+      WHERE "${pgSchema}"."_RecordToUser"."B" = '${userId}'
+      
+      AND "${pgSchema}"."Record"."date" <= '${dateISO}'
+    `
+  }
+
+  return ctx.prisma.$graphql(mutation, variables)
+    .then(response => {
+      const totalBalance = response.executeRaw[0].totalbalance
+      return totalBalance ? totalBalance : 0
+    })
+
+}
+
 module.exports = {
   accounts,
   categories,
   records,
+  totalBalance,
   user
 }
