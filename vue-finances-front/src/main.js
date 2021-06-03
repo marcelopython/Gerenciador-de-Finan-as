@@ -4,8 +4,11 @@ import router from './router'
 import store from './store'
 import vuetify from './plugins/vuetify'
 import './plugins/vuelidate'
+import { errorHandle } from './utils'
 
 Vue.config.productionTip = false
+
+Vue.config.errorHandler = errorHandle
 
 new Vue({
   router,

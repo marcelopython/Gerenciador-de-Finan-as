@@ -35,7 +35,6 @@ router.beforeEach(async (to, from, next) => {
         })
         return next()
       } catch (e) {
-        console.log(loginRoute)
         console.log('Autho Login error', e)
         return next(loginRoute)
       }
