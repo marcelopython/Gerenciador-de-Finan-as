@@ -18,6 +18,13 @@
             dark
           >
             <v-toolbar-title>{{ texts.toolbar }}</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-progress-circular
+              v-show="isLoading"
+              indeterminate
+              color="white"
+              width="2"
+            ></v-progress-circular>
           </v-toolbar>
 
           <v-card-text>
@@ -74,6 +81,21 @@
             >{{ texts.toolbar }}</v-btn>
           </v-card-actions>
 
+          <v-snackbar
+            v-model="showSnackbar"
+            top
+          >
+            {{error}}
+            <v-btn
+              color="pink"
+              falt
+              icon
+              @click="showSnackbar = false"
+            >
+              <v-icon>close</v-icon>
+            </v-btn>
+          </v-snackbar>
+
         </v-card>
       </v-flex>
 
@@ -84,11 +106,16 @@
 
 <script>
 import { required, email, minLength } from 'vuelidate/lib/validators'
+import AuthService from './../services/auth-service'
+import { formatError } from '@/utils'
 
 export default {
   name: 'Login',
   data: () => ({
+    error: undefined,
+    showSnackbar: false,
     isLogin: true,
+    isLoading: false,
     user: {
       name: '',
       email: '',
@@ -158,11 +185,19 @@ export default {
     }
   },
   methods: {
-    log () {
-      console.log('vuelidade', this.$v)
-    },
-    submit () {
-      console.log('User ', this.user)
+    async submit () {
+      try {
+        this.isLoading = true
+        this.isLogin
+          ? await AuthService.login(this.user)
+          : await AuthService.signup(this.user)
+        this.$router.push(this.$route.query.redirect || '/dashboard')
+      } catch (e) {
+        this.error = formatError(e.message)
+        this.showSnackbar = true
+      } finally {
+        this.isLoading = false
+      }
     }
   }
 }
