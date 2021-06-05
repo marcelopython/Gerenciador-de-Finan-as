@@ -41,7 +41,7 @@ function categories(parent, { operation }, ctx, info) {
 
 function records(parent, { month, type, accountIds, categoriesIds }, ctx, info) {
   const userId = getUserId(ctx);
-
+  
   let AND = [ { user: { id: userId } } ]
   AND = !type ? AND : [ ...AND, { type } ]
 
@@ -77,13 +77,12 @@ function user(parent, args, ctx, info) {
 }
 
 function totalBalance(parent, { date }, ctx, info) {
-  const userId = getUserId(ctx);
-  const dateISO = moment(date, 'YYY-MM-DD').endOf('day').toISOString()
+  const userId = getUserId(ctx)
+  const dateISO = moment(date, 'YYYY-MM-DD').endOf('day').toISOString()
   const pgSchema = `${process.env.PRISMA_SERVICE}$${process.env.PRISMA_STAGE}`
 
   const mutation = `
-  
-    mutation totalBalance($database: PrismaDatabase, $query: String!){
+    mutation TotalBalance($database: PrismaDatabase, $query: String!) {
       executeRaw(database: $database, query: $query)
     }
   `
@@ -91,15 +90,15 @@ function totalBalance(parent, { date }, ctx, info) {
   const variables = {
     database: 'default',
     query: `
-    select SUM("${pgSchema}"."Record".amount) as totalbalance
-      from "${pgSchema}"."Record"
-      
-      INNER JOIN "${pgSchema}"."_RecordToUser"
-      on "${pgSchema}"."_RecordToUser"."A" = "${pgSchema}"."Record"."id"
+      SELECT SUM("${pgSchema}"."Record"."amount") as totalbalance
+        FROM "${pgSchema}"."Record"
         
-      WHERE "${pgSchema}"."_RecordToUser"."B" = '${userId}'
-      
-      AND "${pgSchema}"."Record"."date" <= '${dateISO}'
+        INNER JOIN "${pgSchema}"."_RecordToUser"
+        ON "${pgSchema}"."_RecordToUser"."A" = "${pgSchema}"."Record"."id"
+        
+        WHERE "${pgSchema}"."_RecordToUser"."B" = '${userId}'
+        
+        AND "${pgSchema}"."Record"."date" <= '${dateISO}'
     `
   }
 

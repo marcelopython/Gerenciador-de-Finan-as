@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken')
 
 
 function getUserId(context) {
-
   const Authorization = context.request.get('Authorization')
   
   if(Authorization){

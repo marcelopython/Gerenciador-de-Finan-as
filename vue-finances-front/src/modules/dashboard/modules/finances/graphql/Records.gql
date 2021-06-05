@@ -1,0 +1,33 @@
+# import * from './Operation.gql'
+
+query RecordsByMonth  (
+    $month: String, 
+    $type: Operation,
+    $accountIds: [ ID! ],
+    $categoriesIds: [ ID! ]
+) {
+  records (
+    month: $month,
+    type: $type,
+    accountIds: $accountIds,
+    categoriesIds: $categoriesIds
+  ) {
+    id
+    date
+    amount
+    type
+    description
+    user {
+      id
+      name
+    }
+    account {
+      id
+      description
+    }
+    category{
+      id
+      description
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# import Operation from './Operation'
+
+query Categories ($operation: Operation) {
+  categories(operation: $operation) {
+    id
+    description
+    operation
+    user {
+      id
+      name
+      email
+    }
+  }
+}
