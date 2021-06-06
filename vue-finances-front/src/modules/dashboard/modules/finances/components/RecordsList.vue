@@ -81,7 +81,8 @@ export default {
   ],
   data: () => ({
     records: [],
-    monthSubject$: new Subject()
+    monthSubject$: new Subject(),
+    subscriptions: []
   }),
   computed: {
     mappedRecords () {
@@ -102,6 +103,9 @@ export default {
   created () {
     this.setRecords()
   },
+  destroyed () {
+    this.subscriptions.forEach(subcription => subcription.unsubscribe())
+  },
   methods: {
     changeMonth (month) {
       if (this.$route.fullPath !== this.$route.path + '?month=' + month) {
@@ -119,11 +123,13 @@ export default {
       return index < Object.keys(object).length - 1
     },
     setRecords (month) {
-      this.monthSubject$
-        .pipe(
-          mergeMap((variables) => RecordsService.records(variables))
-        )
-        .subscribe(records => (this.records = records))
+      this.subscriptions.push(
+        this.monthSubject$
+          .pipe(
+            mergeMap((variables) => RecordsService.records(variables))
+          )
+          .subscribe(records => (this.records = records))
+      )
     }
 
   }
