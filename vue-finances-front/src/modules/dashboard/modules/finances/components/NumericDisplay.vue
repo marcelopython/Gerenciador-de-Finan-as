@@ -68,7 +68,6 @@ export default {
   methods: {
     change (btnValue, operation) {
       const currentValue = this.value.toFixed(2)
-      console.log(currentValue)
       const total =
         operation === 'add'
           ? (+(currentValue + btnValue) * 10)

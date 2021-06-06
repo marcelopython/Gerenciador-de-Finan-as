@@ -57,6 +57,8 @@
 
 <script>
 import moment from 'moment'
+import { Subject } from 'rxjs'
+import { mergeMap } from 'rxjs/operators'
 import RecordsListItem from './RecordsListItem'
 import ToolbarByMonth from './ToolbarByMonth'
 import TotalBalance from './TotalBalance'
@@ -78,12 +80,13 @@ export default {
     amountColorMixin
   ],
   data: () => ({
-    records: []
+    records: [],
+    monthSubject$: new Subject()
   }),
   computed: {
     mappedRecords () {
       return groupBy(this.records, 'date', (record, dateKey) => {
-        return moment(record[dateKey]).format('DD/MM/YYYY')
+        return moment(record[dateKey].substr(0, 10)).format('DD/MM/YYYY')
       })
     },
     mappedRecordsLenght () {
@@ -96,6 +99,9 @@ export default {
       return this.totalAmount < 0 ? 'red  lighten-1' : 'primary'
     }
   },
+  created () {
+    this.setRecords()
+  },
   methods: {
     changeMonth (month) {
       if (this.$route.fullPath !== this.$route.path + '?month=' + month) {
@@ -104,13 +110,20 @@ export default {
           query: { month }
         })
       }
+      this.monthSubject$.next({
+        month
+      })
       this.setRecords(month)
     },
     showDivider (index, object) {
       return index < Object.keys(object).length - 1
     },
-    async setRecords (month) {
-      this.records = await RecordsService.records({ month })
+    setRecords (month) {
+      this.monthSubject$
+        .pipe(
+          mergeMap((variables) => RecordsService.records(variables))
+        )
+        .subscribe(records => (this.records = records))
     }
 
   }

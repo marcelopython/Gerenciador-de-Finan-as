@@ -76,7 +76,21 @@
                 item-text="description"
                 item-value="id"
                 v-model="$v.record.accountId.$model"
-              ></v-select>
+              >
+
+                <v-list-item
+                  slot="prepend-item"
+                  ripple
+                  @click="add('account')"
+                >
+                  <v-list-item-action>
+                    <v-icon>add</v-icon>
+                  </v-list-item-action>
+                  <v-list-item-title>Conta</v-list-item-title>
+                </v-list-item>
+                <v-divider slot="prepend-item"></v-divider>
+
+              </v-select>
 
               <v-select
                 name="category"
@@ -86,7 +100,21 @@
                 item-text="description"
                 item-value="id"
                 v-model="$v.record.categoryId.$model"
-              ></v-select>
+              >
+
+                <v-list-item
+                  slot="prepend-item"
+                  ripple
+                  @click="add('category')"
+                >
+                  <v-list-item-action>
+                    <v-icon>add</v-icon>
+                  </v-list-item-action>
+                  <v-list-item-title>Categoria</v-list-item-title>
+                </v-list-item>
+                <v-divider slot="prepend-item"></v-divider>
+
+              </v-select>
 
               <v-text-field
                 name="description"
@@ -166,9 +194,24 @@
           fab
           class="mt-4 ml-2"
           @click="submit"
+          :disabled="$v.$invalid"
         >
           <v-icon>check</v-icon>
         </v-btn>
+
+        <v-dialog
+          v-model="showAccountCategoryDialog"
+          max-width="350px"
+        >
+          <v-card>
+            <AccountCategoryAdd
+              v-if="showAccountCategoryDialog"
+              :entity="entity"
+              @close="showAccountCategoryDialog = false"
+              @saved="accountCategorySaved"
+            />
+          </v-card>
+        </v-dialog>
 
       </v-flex>
 
@@ -179,22 +222,29 @@
 <script>
 
 import { mapActions } from 'vuex'
+import { Subject } from 'rxjs'
+import { distinctUntilChanged, mergeMap } from 'rxjs/operators'
 import moment from 'moment'
 import { decimal, minLength, required } from 'vuelidate/lib/validators'
 import AccountsServices from './../services/account-service'
 import CategoriesServices from './../services/categories-service'
+import RecordsServices from './../services/records-service'
 import NumericDisplay from './../components/NumericDisplay.vue'
+import AccountCategoryAdd from './../components/AccountCategoryAdd.vue'
 
 export default {
   name: 'RecordsAdd',
   components: {
-    NumericDisplay
+    NumericDisplay,
+    AccountCategoryAdd
   },
   data () {
     return {
       accounts: [],
       categories: [],
       dateDialogValue: moment().format('YYYY-MM-DD'),
+      entity: '',
+      operationSubject$: new Subject(),
       record: {
         type: this.$route.query.type.toUpperCase(),
         amount: 0,
@@ -207,7 +257,9 @@ export default {
       },
       showDateDialog: false,
       showTagsInput: false,
-      showNoteInput: false
+      showNoteInput: false,
+      showAccountCategoryDialog: false,
+      subcriptions: []
     }
   },
   validations: {
@@ -235,24 +287,43 @@ export default {
       return moment(this.record.date).format('DD/MM/YYYY')
     }
   },
-  async created () {
+  created () {
     this.changeTitle(this.$route.query.type)
-    this.accounts = await AccountsServices.accounts()
-    this.categories = await CategoriesServices.categories({
-      operation: this.$route.query.type
-    })
+    this.subcriptions.push(
+      AccountsServices.accounts()
+        .subscribe(accounts => (this.accounts = accounts))
+    )
+    this.subcriptions.push(
+      this.operationSubject$
+        .pipe(
+          distinctUntilChanged(),
+          mergeMap(operation => CategoriesServices.categories({ operation }))
+        )
+        .subscribe(categories => (this.categories = categories))
+    )
+    this.operationSubject$.next(this.$route.query.type)
   },
   async beforeRouteUpdate (to, from, next) {
     const { type } = to.query
     this.changeTitle(type)
     this.record.type = type.toUpperCase()
-    this.categories = await CategoriesServices.categories({
-      operation: type
-    })
+    this.record.categoryId = ''
+    this.operationSubject$.next(this.$route.query.type)
     next()
+  },
+  destroyed () {
+    this.subcriptions.forEach(subcription => subcription.unsubscribe())
   },
   methods: {
     ...mapActions(['setTitle']),
+    accountCategorySaved (item) {
+      this.showAccountCategoryDialog = false
+      this.record[`${this.entity}Id`] = item.id
+    },
+    add (entity) {
+      this.showAccountCategoryDialog = true
+      this.entity = entity
+    },
     cancelDateDialog () {
       this.showDateDialog = false
       this.dateDialogValue = this.record.date
@@ -271,8 +342,13 @@ export default {
       }
       this.setTitle({ title })
     },
-    submit () {
-      console.log('teste', this.record)
+    async submit () {
+      try {
+        await RecordsServices.createRecord(this.record)
+        this.$router.push('/dashboard/records?month=' + moment().format('MM-YYYY'))
+      } catch (e) {
+        console.log('error create record', e)
+      }
     }
   }
 

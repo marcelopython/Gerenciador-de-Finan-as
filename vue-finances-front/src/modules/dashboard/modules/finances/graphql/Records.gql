@@ -17,6 +17,8 @@ query RecordsByMonth  (
     amount
     type
     description
+    tags
+    note
     user {
       id
       name

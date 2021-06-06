@@ -1,0 +1,43 @@
+# import * from './Operation.gql'
+
+mutation  RecordCreate (
+    $type: Operation!,
+    $amount: Float!,
+    $accountId: ID!,
+    $categoryId: ID!,
+    $date: Date!,
+    $description: String!,
+    $tags: String,
+    $note: String
+  ) {
+      createRecord (
+      type: $type,
+      amount: $amount,
+      accountId: $accountId,
+      categoryId: $categoryId,
+      date: $date,
+      description: $description,
+      tags: $tags,
+      note: $note
+    ) {
+      id
+      date
+      description
+      amount
+      type
+      tags
+      note
+      user {
+        id
+        name
+      }
+      account {
+        id
+        description
+      }
+      category {
+        id
+        description
+      }
+    }
+  }

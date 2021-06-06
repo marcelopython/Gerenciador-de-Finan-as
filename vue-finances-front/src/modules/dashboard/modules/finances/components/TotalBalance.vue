@@ -2,8 +2,7 @@
   <v-card :color="color">
     <v-card-title primary-title>
       <div class="text-center ma-auto">
-        <p class="subheading">Saldo atual</p>
-        <h1 class="display-2">{{ totalIncurrency }}</h1>
+        <h1 class="display-1">{{ totalIncurrency }}</h1>
       </div>
     </v-card-title>
   </v-card>
